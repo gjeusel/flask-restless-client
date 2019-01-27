@@ -1,3 +1,8 @@
+from .client import Client
+
+
+# Old version
+
 # import requests
 # import pprint
 # import logging
@@ -13,7 +18,7 @@
 # from collections import defaultdict
 
 # requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-# logger = logging.getLogger('bluesnake-client')
+# logger = logging.getLogger('restless-client')
 
 
 # class UserException(Exception):

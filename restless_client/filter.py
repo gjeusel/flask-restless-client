@@ -1,11 +1,9 @@
 import logging
 
-logger = logging.getLogger('bluesnake-client')
+logger = logging.getLogger('restless-client')
 
-INVERT_OPERATORS = [
-    ('==', '!='), ('>', '<='), ('<', '>='), ('>=', '<'),
-    ('<=', '>'), ('in', 'not_in'), ('is_null', 'is_not_null')
-]
+INVERT_OPERATORS = [('==', '!='), ('>', '<='), ('<', '>='), ('>=', '<'),
+                    ('<=', '>'), ('in', 'not_in'), ('is_null', 'is_not_null')]
 INVERT_MAPPING = {}
 for a, b in INVERT_OPERATORS:
     INVERT_MAPPING[a] = b
@@ -13,7 +11,9 @@ for a, b in INVERT_OPERATORS:
 
 
 def is_filter_result(f, operator):
-    assert isinstance(f, (BooleanResult, ComparisonResult)), 'Wrong use of {}'.format(operator)
+    assert isinstance(
+        f,
+        (BooleanResult, ComparisonResult)), 'Wrong use of {}'.format(operator)
 
 
 class FilterCollection(list):
@@ -56,7 +56,8 @@ class ComparisonResult:
 
     def __invert__(self):
         if self.op not in INVERT_MAPPING:
-            raise Exception('{} is not a valid invert candidate'.format(self.op))
+            raise Exception('{} is not a valid invert candidate'.format(
+                self.op))
         return ComparisonResult(self.name, INVERT_MAPPING[self.op], self.val)
 
     def __and__(self, other):

@@ -1,10 +1,10 @@
-from bluesnake_client.filter import Query
-from bluesnake_client.connection import LoadableProperty
-from bluesnake_client.utils import (urljoin, generate_id, classproperty, State,
-    pretty_logger)
 import logging
 
-logger = logging.getLogger('bluesnake-client')
+from .connection import LoadableProperty
+from .filter import Query
+from .utils import State, classproperty, generate_id, pretty_logger, urljoin
+
+logger = logging.getLogger('restless-client')
 
 
 def create_method_function(client, name, details):
@@ -61,8 +61,8 @@ class BaseObject:
                 allowed = (self._parent._classes[rel_model], LoadableProperty)
                 if value.__class__ not in allowed:
                     msg = '%s must be an instance of %s, not %s'
-                    raise Exception(msg % (name, rel_model,
-                                           value.__class__.__name__))
+                    raise Exception(
+                        msg % (name, rel_model, value.__class__.__name__))
         object.__setattr__(self, name, value)
 
     @classproperty
@@ -127,8 +127,8 @@ class BaseObject:
             r = self._parent.session.delete(url)
             if not r.status_code == 204:
                 msg = "Unable to delete object %s, recieved status code %s: %s"
-                raise Exception(msg % (self.__class__.__name__, r.status_code,
-                                       r.content))
+                raise Exception(
+                    msg % (self.__class__.__name__, r.status_code, r.content))
         return True
 
     def save(self):
@@ -150,8 +150,8 @@ class BaseObject:
             self.id = r.json()['id']
         else:
             msg = "Unable to create object %s, recieved status code %s: %s"
-            raise Exception(msg % (self.__class__.__name__, r.status_code,
-                                   r.content))
+            raise Exception(
+                msg % (self.__class__.__name__, r.status_code, r.content))
 
     def _update(self):
         object_dict = self._flat_dict()
@@ -161,8 +161,8 @@ class BaseObject:
         r = self._parent.session.put(url, json=object_dict)
         if not r.ok:
             msg = "Unable to update object %s, recieved status code %s: %s"
-            raise Exception(msg % (self.__class__.__name__, r.status_code,
-                                   r.content))
+            raise Exception(
+                msg % (self.__class__.__name__, r.status_code, r.content))
 
     def __repr__(self):
         return str(self)

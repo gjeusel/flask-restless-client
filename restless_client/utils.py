@@ -7,7 +7,7 @@ from enum import Enum
 from contextlib import contextmanager
 
 LIKELY_PARSABLE_DATETIME = r"^(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2})|(\d{8}T\d{6}Z?)"
-logger = logging.getLogger('bluesnake-client')
+logger = logging.getLogger('restless-client')
 
 LOCAL_ID_COUNT = 0
 DEPTH = 0

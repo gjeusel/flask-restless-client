@@ -1,20 +1,23 @@
-from bluesnake_client.connection import AuthedSession, ObjectLoader, LoadableProperty
-from bluesnake_client.utils import urljoin, State, get_depth
-from bluesnake_client.models import BaseObject, create_method_function
-from contextlib import contextmanager
-import crayons
 import logging
 import sys
+from contextlib import contextmanager
+
+import crayons
+
+from .connection import AuthedSession, LoadableProperty, ObjectLoader
+from .models import BaseObject, create_method_function
+from .utils import State, get_depth, urljoin
 
 
 class DepthFilter(logging.Filter):
     def filter(self, record):
-        record.depth = crayons.yellow('{}>'.format('-' * get_depth()), True, True)
+        record.depth = crayons.yellow('{}>'.format('-' * get_depth()), True,
+                                      True)
         return True
 
 
 logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger('bluesnake-client')
+logger = logging.getLogger('restless-client')
 logger.addFilter(DepthFilter())
 steam_handler = logging.StreamHandler(sys.stdout)
 steam_handler.setLevel(logging.DEBUG)
@@ -24,7 +27,8 @@ logger.addHandler(steam_handler)
 
 
 class Client:
-    def __init__(self, url, username=None, password=None, token=None, **kwargs):
+    def __init__(self, url, username=None, password=None, token=None,
+                 **kwargs):
         self.base_url = url
         self.state = State.LOADABLE
         self.model_url = kwargs.pop('model_root', url)
@@ -38,7 +42,8 @@ class Client:
             self._session = kwargs['session']
         else:
             auth_url = urljoin(self.base_url, 'auth')
-            self._session = AuthedSession(auth_url, username, password, token, **kwargs)
+            self._session = AuthedSession(auth_url, username, password, token,
+                                          **kwargs)
 
         self.object_loader = ObjectLoader(self._session)
         self.initialize()

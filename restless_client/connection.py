@@ -1,23 +1,26 @@
-import requests
-import pprint
 import logging
-from bluesnake_client.utils import (parse_custom_types, TypedList, urljoin,
-    ObjectCollection, State, pretty_logger)
-import crayons
-from bluesnake_client.filter import FilterMixIn, ComparisonResult
+import pprint
 from functools import partial
+
+import crayons
+import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
+from .filter import ComparisonResult, FilterMixIn
+from .utils import ObjectCollection, State, TypedList, parse_custom_types, pretty_logger, urljoin
+
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-logger = logging.getLogger('bluesnake-client')
+logger = logging.getLogger('restless-client')
 LOAD_MSG = 'loading {}.{} with value {}'
 
 
 def log_load(o, a, v, attr_color='red'):
-    logger.info(LOAD_MSG.format(
-        crayons.black(o, always=True, bold=True),
-        getattr(crayons, attr_color)(a, always=True, bold=True),
-        crayons.green(str(v)[:150], always=True, bold=True)))
+    logger.info(
+        LOAD_MSG.format(
+            crayons.black(o, always=True, bold=True),
+            getattr(crayons, attr_color)(a, always=True, bold=True),
+            crayons.green(str(v)[:150], always=True, bold=True)))
 
 
 class AuthenticationError(Exception):
@@ -25,8 +28,14 @@ class AuthenticationError(Exception):
 
 
 class AuthedSession(requests.Session):
-    def __init__(self, url=None, username=None, password=None, token=None,
-                 verify=True, trust_env=True, **kwargs):
+    def __init__(self,
+                 url=None,
+                 username=None,
+                 password=None,
+                 token=None,
+                 verify=True,
+                 trust_env=True,
+                 **kwargs):
         super().__init__(**kwargs)
         self.verify = verify
         self.trust_env = trust_env
@@ -36,24 +45,20 @@ class AuthedSession(requests.Session):
             self.authenticate(url, token)
 
     def authenticate(self, url, username, password=None):
-        payload = {
-            'email': username,
-            'password': password
-        }
+        payload = {'email': username, 'password': password}
         r = self.post(url, data=payload)
         if not r.ok:
             raise AuthenticationError(r.content)
         try:
             token = r.json().get('access_token')
         except Exception as e:
-            raise AuthenticationError("An error occured when authenticating".format(e))
+            raise AuthenticationError(
+                "An error occured when authenticating".format(e))
 
         if not token:
             msg = ('An error occurred when authenticating: %s' % r.json())
             AuthenticationError(msg)
-        self.headers.update({
-            'Authorization': 'Bearer {}'.format(token)
-        })
+        self.headers.update({'Authorization': 'Bearer {}'.format(token)})
 
     def request(self, *args, **kwargs):
         return self.validate_response(super().request(*args, **kwargs))
@@ -63,7 +68,9 @@ class AuthedSession(requests.Session):
         try:
             json_data = res.json()
         except Exception:
-            json_data = {'message': 'Unspecified error ({})'.format(res.content)}
+            json_data = {
+                'message': 'Unspecified error ({})'.format(res.content)
+            }
         # prepare error message
         res.reason = "{} ({})".format(res.reason, json_data)
         # raise if needed
@@ -88,8 +95,10 @@ class ObjectLoader:
         objects = raw['objects']
         for page in range(2, raw['total_pages'] + 1):
             kwargs['page'] = page
-            objects.extend(self.load_raw(obj_class._base_url, **kwargs)['objects'])
-        return ObjectCollection(obj_class, set([obj_class(**obj) for obj in objects]))
+            objects.extend(
+                self.load_raw(obj_class._base_url, **kwargs)['objects'])
+        return ObjectCollection(obj_class,
+                                set([obj_class(**obj) for obj in objects]))
 
     def load_obj(self, obj_class, obj_id):
         with obj_class._parent.loading:
@@ -109,7 +118,8 @@ class ObjectLoader:
         for field in obj._relations.keys():
             val = raw.get(field, State.VOID)
             rel_type = obj._relations[field]['relation_type']
-            rel_model = obj._parent._classes[obj._relations[field]['foreign_model']]
+            rel_model = obj._parent._classes[obj._relations[field]
+                                             ['foreign_model']]
             if rel_type == 'm2o':
                 log_load(obj, field, val, 'blue')
                 typed_list = TypedList(rel_model, obj, field)
@@ -126,7 +136,9 @@ class ObjectLoader:
                     log_load(obj, field, val, 'cyan')
                     val = rel_model(**val)
                 if hasattr(val.__class__, '__bases__'):
-                    if 'BaseObject' in [k.__name__ for k in val.__class__.__bases__]:
+                    if 'BaseObject' in [
+                            k.__name__ for k in val.__class__.__bases__
+                    ]:
                         setattr(obj, field, val)
         return obj
 
@@ -184,12 +196,14 @@ class RelationProperty(FilterMixIn):
         self.rel_type = None
         self.is_leaf = True
         if parent_attribute in parent._relations:
-            self.rel_type = parent._relations[parent_attribute]['relation_type']
+            self.rel_type = parent._relations[parent_attribute][
+                'relation_type']
             class_name = parent._relations[parent_attribute]['foreign_model']
             self.klass = parent._parent._classes[class_name]
 
     def __getattr__(self, attr):
-        if attr not in self.klass.attributes() and attr not in self.klass.relations():
+        if attr not in self.klass.attributes(
+        ) and attr not in self.klass.relations():
             msg = '{} has no attribute named {}'
             raise Exception(msg.format(self.klass._class_name, attr))
         return RelationProperty(self.klass, attr, parent_node=self)
