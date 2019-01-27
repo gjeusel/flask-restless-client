@@ -1,1 +1,0 @@
-# flask-restless-client
