@@ -45,7 +45,7 @@ class AuthedSession(requests.Session):
             self.authenticate(url, token)
 
     def authenticate(self, url, username, password=None):
-        payload = {'email': username, 'password': password}
+        payload = {'username': username, 'password': password}
         r = self.post(url, data=payload)
         if not r.ok:
             raise AuthenticationError(r.content)
