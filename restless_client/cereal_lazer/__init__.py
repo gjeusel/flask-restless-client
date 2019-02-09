@@ -1,6 +1,8 @@
-from webargs import fields
 from functools import partial
-from cereal_lazer.parser import get_parser
+
+from webargs import fields
+
+from .parser import get_parser
 
 
 def serialize(value):
@@ -40,7 +42,8 @@ class DynamicType(fields.String):
 
     def _serialize(self, value, attr, obj):
         type_str = type(value).__name__
-        value =  TYPES.get(type_str, fields.String)()._serialize(value, attr, obj)
+        value = TYPES.get(type_str, fields.String)()._serialize(
+            value, attr, obj)
         if type_str not in TYPES:
             type_str = 'str'
         return '<{}|{}|>'.format(type_str, value)
@@ -53,7 +56,7 @@ class Dict(fields.Dict):
 
     def _deserialize(self, value, attr, data):
         c = partial(self.container._deserialize, data=data, attr=attr)
-        return {_deserialize(*k): _deserialize(*v) for k,v in value}
+        return {_deserialize(*k): _deserialize(*v) for k, v in value}
 
     def _serialize(self, value, attr, obj):
         c = partial(self.container._serialize, obj=obj, attr=attr)
@@ -62,6 +65,7 @@ class Dict(fields.Dict):
 
 class List(fields.String):
     type_cls = list
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.container = DynamicType()

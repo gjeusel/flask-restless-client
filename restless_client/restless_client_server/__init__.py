@@ -8,11 +8,12 @@ import flask
 from flask import Response, abort, current_app
 
 import flask_restless
-from cereal_lazer import DynamicType, register_serializable_type
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.inspection import inspect as sqla_inspect
 from webargs import fields
 from webargs.flaskparser import parser as argparser
+
+from ..cereal_lazer import DynamicType, register_serializable_type
 
 
 def serializer_for(model):
@@ -282,7 +283,7 @@ class DataModel(object):
         methods = self.compile_method_list(model)
         self.model_methods[collection_name] = methods
         self.add_method_endpoints(collection_name, model, methods, app)
-        if not model is self:
+        if model is not self:
             register_serializable_type(model.__name__, serializer_for(model))
 
     def compile_method_list(self, model):

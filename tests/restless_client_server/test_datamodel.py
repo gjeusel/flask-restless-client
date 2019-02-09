@@ -5,7 +5,7 @@ import pytest
 
 import flask_restless
 from flask_sqlalchemy import SQLAlchemy
-from restless_client_server import DataModel
+from restless_client import DataModel
 
 
 def test_datamodel(app):
