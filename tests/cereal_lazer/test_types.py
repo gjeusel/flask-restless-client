@@ -4,8 +4,8 @@ import datetime
 from functools import partial
 from webargs.fields import String
 from itertools import permutations
-from cereal_lazer import DynamicType, _deserialize
-from cereal_lazer import serialize, deserialize, register_serializable_type
+from restless_client.cereal_lazer import DynamicType, _deserialize
+from restless_client.cereal_lazer import serialize, deserialize, register_serializable_type
 
 
 to_test = [
@@ -24,6 +24,7 @@ to_test = [
     ('<dict|<int|1|>:<str|test|>,<str|test|>:<dict|<int|2|>:<float|5.6|>|>,<int|3|>:<list|<int|1|>,<int|2|>|>|>', {1: 'test', 'test': {2: 5.6}, 3: [1, 2]})
 ]
 
+
 @pytest.mark.parametrize('expected, to_serialize', to_test)
 def test_serialize(expected, to_serialize):
     assert serialize(to_serialize) == expected
@@ -40,6 +41,7 @@ def test_serialize_set():
     for permutation in permutations(items):
         expected.append('<set|{},{},{}|>'.format(*permutation))
     assert serialize(set([1, 'test', 6.7])) in expected
+
 
 def test_deserialize_set():
     expected = '<set|<int|1|>,<str|test|>,<float|6.7|>|>'
