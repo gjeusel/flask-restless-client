@@ -1,9 +1,12 @@
 import json
-import flask_restless
-from restless_client_server import DataModel
-from flask_sqlalchemy import SQLAlchemy
 from datetime import date
+
 import pytest
+
+import flask_restless
+from flask_sqlalchemy import SQLAlchemy
+from restless_client_server import DataModel
+
 
 def test_datamodel(app):
     db = SQLAlchemy(app)
@@ -13,21 +16,24 @@ def test_datamodel(app):
         name = db.Column(db.Unicode, unique=True)
         birth_date = db.Column(db.Date)
 
-
     class Computer(db.Model):
         id = db.Column(db.Integer, primary_key=True)
         name = db.Column(db.Unicode, unique=True)
         vendor = db.Column(db.Unicode)
         purchase_time = db.Column(db.DateTime)
         owner_id = db.Column(db.Integer, db.ForeignKey('person.id'))
-        owner = db.relationship('Person', backref=db.backref('computers',
-                                                             lazy='dynamic'))
+        owner = db.relationship(
+            'Person', backref=db.backref('computers', lazy='dynamic'))
 
     db.create_all()
 
     manager = flask_restless.APIManager(app, flask_sqlalchemy_db=db)
     manager.create_api(Person, methods=['GET'], include_columns=['name'])
-    manager.create_api(Computer, methods=['GET'], collection_name='compjutahs', exclude_columns=['name'])
+    manager.create_api(
+        Computer,
+        methods=['GET'],
+        collection_name='compjutahs',
+        exclude_columns=['name'])
     data_model = DataModel(manager)
     manager.create_api(data_model, methods=['GET'])
 
@@ -38,23 +44,31 @@ def test_datamodel(app):
                 'id': 'integer',
                 'owner_id': 'integer',
                 'purchase_time': 'datetime',
-                'vendor': 'unicode'},
+                'vendor': 'unicode'
+            },
             'relations': {
                 'owner': {
                     'backref': 'computers',
                     'foreign_model': 'Person',
-                    'relation_type': 'MANYTOONE'}},
-            'methods': {}},
-         'Person': {
+                    'relation_type': 'MANYTOONE'
+                }
+            },
+            'methods': {}
+        },
+        'Person': {
             'collection_name': 'person',
             'attributes': {
-                'name': 'unicode'},
+                'name': 'unicode'
+            },
             'relations': {},
-            'methods': {}}}
+            'methods': {}
+        }
+    }
 
     with app.app_context():
         client = app.test_client()
-        res = json.loads(client.get('/api/restless-client-datamodel').data.decode('utf-8'))
+        res = json.loads(
+            client.get('/api/restless-client-datamodel').data.decode('utf-8'))
     assert res == expected
 
 
@@ -68,7 +82,8 @@ def test_inheritance(app):
 
     class Engineer(Person):
         __mapper_args__ = {'polymorphic_identity': 'engineer'}
-        id = db.Column(db.Integer, db.ForeignKey('person.id'), primary_key=True)
+        id = db.Column(
+            db.Integer, db.ForeignKey('person.id'), primary_key=True)
         primary_language = db.Column(db.Unicode)
 
     db.create_all()
@@ -85,20 +100,26 @@ def test_inheritance(app):
             'attributes': {
                 'id': 'integer',
                 'primary_language': 'unicode',
-                'discriminator': 'unicode'},
+                'discriminator': 'unicode'
+            },
             'relations': {},
-            'methods': {}},
-         'Person': {
+            'methods': {}
+        },
+        'Person': {
             'collection_name': 'person',
             'attributes': {
                 'id': 'integer',
-                'discriminator': 'unicode'},
+                'discriminator': 'unicode'
+            },
             'relations': {},
-            'methods': {}}}
+            'methods': {}
+        }
+    }
 
     with app.app_context():
         client = app.test_client()
-        res = json.loads(client.get('/api/restless-client-datamodel').data.decode('utf-8'))
+        res = json.loads(
+            client.get('/api/restless-client-datamodel').data.decode('utf-8'))
     assert res == expected
 
 
@@ -114,9 +135,7 @@ def exposed_method_model_app(app):
         def age_in_x_years_y_months(self, y_offset, m_offset=0):
             dt = self.birth_date
             return dt.replace(
-                year=dt.year + y_offset,
-                month=dt.month + m_offset
-            )
+                year=dt.year + y_offset, month=dt.month + m_offset)
 
         def get_attrs_based_on_dict(self, args):
             return_dict = {}
@@ -129,19 +148,14 @@ def exposed_method_model_app(app):
             assert isinstance(person, Person)
             return person
 
-
     db.create_all()
 
-    db.session.add(Person(
-        name='Jim Darkmagic',
-        birth_date=date(2018, 1, 1)))
+    db.session.add(Person(name='Jim Darkmagic', birth_date=date(2018, 1, 1)))
     db.session.commit()
 
     manager = flask_restless.APIManager(app, flask_sqlalchemy_db=db)
     manager.create_api(Person, methods=['GET'])
-    data_model = DataModel(
-        manager,
-        include_model_functions=True)
+    data_model = DataModel(manager, include_model_functions=True)
     manager.create_api(data_model, methods=['GET'])
     return app
 
@@ -150,7 +164,8 @@ def test_exposed_methods(exposed_method_model_app):
     app = exposed_method_model_app
     with app.app_context():
         client = app.test_client()
-        res = json.loads(client.get('/api/restless-client-datamodel').data.decode('utf-8'))
+        res = json.loads(
+            client.get('/api/restless-client-datamodel').data.decode('utf-8'))
 
     expected = {
         'Person': {
@@ -158,7 +173,8 @@ def test_exposed_methods(exposed_method_model_app):
             'attributes': {
                 'id': 'integer',
                 'name': 'unicode',
-                'birth_date': 'date'},
+                'birth_date': 'date'
+            },
             'relations': {},
             'methods': {
                 'age_in_x_years_y_months': {
@@ -177,6 +193,7 @@ def test_exposed_methods(exposed_method_model_app):
         }
     }
     assert res == expected
+
 
 def test_call_exposed_method_int(exposed_method_model_app):
     app = exposed_method_model_app

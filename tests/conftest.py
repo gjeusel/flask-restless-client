@@ -15,4 +15,3 @@ def app():
 def client(app):
     with app.app_context():
         return app.test_client
-

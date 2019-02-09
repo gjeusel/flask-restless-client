@@ -36,7 +36,7 @@ def urljoin(*args):
 def datetime_from_value(value, as_timezone):
     if isinstance(value, str) and re.search(LIKELY_PARSABLE_DATETIME, value):
         return parser.parse(value).astimezone(as_timezone)
-    elif isinstance(value, list):
+    elif hasattr(value, '__iter__'):
         for idx, item in enumerate(value):
             if isinstance(item, dict):
                 value[idx] = parse_custom_types(item)

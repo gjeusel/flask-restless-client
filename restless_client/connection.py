@@ -144,8 +144,8 @@ class ObjectLoader:
 
     def load_raw(self, url, **kwargs):
         fn = getattr(self.session, kwargs.pop('http_method', 'get'))
-        r = fn(url, params=kwargs)
         logger.debug("getting: %s" % url)
+        r = fn(url, params=kwargs)
         resource = r.json(object_hook=partial(parse_custom_types, **kwargs))
         logger.debug('result: %s' % pprint.pformat(resource))
         return resource
