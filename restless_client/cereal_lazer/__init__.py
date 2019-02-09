@@ -1,9 +1,6 @@
-import re
-import json
 from webargs import fields
 from functools import partial
 from cereal_lazer.parser import get_parser
-from dateutil.parser import parse as dtparse
 
 
 def serialize(value):

@@ -1,5 +1,7 @@
-from pyparsing import Word, Suppress, Literal, Group, Optional, OneOrMore, Forward
 import string
+
+from pyparsing import Forward, Group, Literal, OneOrMore, Optional, Suppress, Word
+
 
 def get_parser(types):
     TYPE = Literal(types[0])
@@ -14,13 +16,14 @@ def get_parser(types):
     LIST_DELIMITER = Suppress(Optional(','))
     DICT_DELIMITER = Suppress(':')
 
-    SINGLE = OPEN + TYPE + DELIMITER + VALUE + DELIMITER + CLOSE
     COMBI = Forward()
     DICT_VALUE = Group(
         OneOrMore(
-            Group(Group(COMBI) + DICT_DELIMITER + Group(COMBI) + LIST_DELIMITER)
-        ))
+            Group(
+                Group(COMBI) + DICT_DELIMITER + Group(COMBI) +
+                LIST_DELIMITER,)))
     NESTED_VALUE = Group(OneOrMore(Group(COMBI + LIST_DELIMITER)))
-    COMBI << OPEN + TYPE + DELIMITER + (VALUE | DICT_VALUE | NESTED_VALUE) + DELIMITER + CLOSE
+    COMBI << OPEN + TYPE + DELIMITER + (VALUE | DICT_VALUE
+                                        | NESTED_VALUE) + DELIMITER + CLOSE
 
     return COMBI

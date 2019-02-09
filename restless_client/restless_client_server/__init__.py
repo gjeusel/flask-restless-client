@@ -1,17 +1,18 @@
+import inspect
 import json
-import flask
-import flask_restless
-from itertools import chain
-from flask import current_app
-from flask import abort, Response
-from sqlalchemy.inspection import inspect as sqla_inspect
-from sqlalchemy.ext.hybrid import hybrid_property
 from contextlib import contextmanager
 from functools import wraps
-import inspect
+from itertools import chain
+
+import flask
+from flask import Response, abort, current_app
+
+import flask_restless
 from cereal_lazer import DynamicType, register_serializable_type
-from webargs.flaskparser import parser as argparser
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.inspection import inspect as sqla_inspect
 from webargs import fields
+from webargs.flaskparser import parser as argparser
 
 
 def serializer_for(model):
@@ -21,6 +22,7 @@ def serializer_for(model):
 
         def _serialize(self, value, attr, obj):
             return value.id
+
     return ModelSerializer
 
 
@@ -50,7 +52,9 @@ def assure_mimerender():
     This context manager will take care of the context vars handling, so that 
     the parent view_func will have vars to unset
     """
-    context_keys = ['mimerender_shortmime','mimerender_mime', 'mimerender_renderer']
+    context_keys = [
+        'mimerender_shortmime', 'mimerender_mime', 'mimerender_renderer'
+    ]
     context_vars = {}
     for key in context_keys:
         context_vars[key] = flask.request.environ[key]
@@ -76,11 +80,15 @@ def catch_model_configuration(dispatch_request):
 
     And this way, we're at least dropping the restrictive part :)
     """
+
     def wrapper(self, *args, **kwargs):
         def clean(columns):
             return columns or []
-        include_columns = chain(clean(self.include_columns), clean(self.include_relations))
-        exclude_columns = chain(clean(self.exclude_columns), clean(self.exclude_relations))
+
+        include_columns = chain(
+            clean(self.include_columns), clean(self.include_relations))
+        exclude_columns = chain(
+            clean(self.exclude_columns), clean(self.exclude_relations))
         # Putting back the old and original dispatch_request method to continue
         # normal operation from this point on.
         self.__class__.dispatch_request = dispatch_request
@@ -88,6 +96,7 @@ def catch_model_configuration(dispatch_request):
             'include': list(include_columns),
             'exclude': list(exclude_columns)
         }
+
     return wrapper
 
 
@@ -103,6 +112,7 @@ def inject_preprocessor(fn, data_model):
         api_info = data_model.api_manager.created_apis_for[model]
         data_model.register_method_url(model, app, api_info.collection_name)
         return blueprint
+
     return wrapper
 
 
@@ -120,8 +130,7 @@ class DataModel(object):
         like they are registering just another model they want to expose.
         """
         api_manager.create_api_blueprint = inject_preprocessor(
-            api_manager.create_api_blueprint, self
-        )
+            api_manager.create_api_blueprint, self)
         self.api_manager = api_manager
         self.data_model = {}
         self.flag_for_inheritance = {}
@@ -133,8 +142,8 @@ class DataModel(object):
         return {
             'GET': [self.intercept_and_return_datamodel],
             'GET_MANY': [self.intercept_and_return_datamodel]
-        } 
-    
+        }
+
     def intercept_and_return_datamodel(self, *args, **kwargs):
         """
         This method must be called as a preprocessor to the actual restless
@@ -152,7 +161,8 @@ class DataModel(object):
         """
         if not self.data_model:
             with assure_mimerender():
-                for model, api_info in self.api_manager.created_apis_for.items():
+                for model, api_info in self.api_manager.created_apis_for.items(
+                ):
                     if model is self:
                         continue
                     kwargs = self.get_restless_model_conf(model, api_info)
@@ -163,7 +173,7 @@ class DataModel(object):
             for model, inheriting_from in self.flag_for_inheritance.items():
                 self.resolve_inheritance(model, inheriting_from)
         # (Mis)using the flask abort to return the datamodel before the
-        # request gets forwarded to the actual db querying 
+        # request gets forwarded to the actual db querying
         abort(Response(json.dumps(self.data_model)))
 
     def resolve_inheritance(self, model, inheriting_from):
@@ -188,7 +198,8 @@ class DataModel(object):
 
         view_func = current_app.view_functions[endpoint]
 
-        dispatch_fn = catch_model_configuration(view_func.view_class.dispatch_request)
+        dispatch_fn = catch_model_configuration(
+            view_func.view_class.dispatch_request)
         view_func.view_class.dispatch_request = dispatch_fn
         result = view_func().json
         return {
@@ -197,7 +208,8 @@ class DataModel(object):
             'excluded': result['exclude']
         }
 
-    def register_model(self, model, collection_name, bp_name, included, excluded):
+    def register_model(self, model, collection_name, bp_name, included,
+                       excluded):
         """
         Loops over all attributes, relations, hybrid properties and merges
         inherited classes with their parent and puts this information in a 
@@ -235,14 +247,17 @@ class DataModel(object):
                 }
 
         # hybrid
-        hybrid_properties = [a for a in sqla_inspect(model).all_orm_descriptors
-                             if isinstance(a, hybrid_property)]
+        hybrid_properties = [
+            a for a in sqla_inspect(model).all_orm_descriptors
+            if isinstance(a, hybrid_property)
+        ]
         for attribute in hybrid_properties:
             if is_valid(attribute):
                 attribute_dict[attribute.__name__] = 'hybrid'
 
         # inheritance
-        if hasattr(model, '__mapper_args__') and 'polymorphic_identity' in model.__mapper_args__:
+        if hasattr(model, '__mapper_args__'
+                   ) and 'polymorphic_identity' in model.__mapper_args__:
             db = self.api_manager.flask_sqlalchemy_db
             inheriting_from = []
             for kls in model.__bases__:
@@ -272,8 +287,10 @@ class DataModel(object):
 
     def compile_method_list(self, model):
         methods = {}
-        include_internal = self.options.get('include_model_internal_functions', False)
-        for name, fn in inspect.getmembers(model, predicate=inspect.isfunction):
+        include_internal = self.options.get('include_model_internal_functions',
+                                            False)
+        for name, fn in inspect.getmembers(
+                model, predicate=inspect.isfunction):
             if name.startswith('__'):
                 continue
             if name.startswith('_') and not include_internal:
@@ -300,7 +317,8 @@ class DataModel(object):
             fmt = '/api/method/{0}/<instid>/{1}'
             instance_endpoint = fmt.format(collection_name, method)
             parser_args = {}
-            for param in chain(details['required_params'], details['optional_params']):
+            for param in chain(details['required_params'],
+                               details['optional_params']):
                 required = param in details['required_params']
                 parser_args[param] = DynamicType(required=required)
             app.add_url_rule(
@@ -312,6 +330,3 @@ class DataModel(object):
                     'parser_args': parser_args
                 },
                 view_func=run_object_method)
-
-        
-
